@@ -6,6 +6,7 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -27,9 +28,29 @@ public abstract class AbstractXmlProcessingAction {
         documentToAdd.accept(new AddXmlContentAction.NamespaceChangingVisitor(Namespace.NO_NAMESPACE, parentNamespace));
     }
 
+    /**
+     * Builds a SAXReader that doesn't resolve DOCTYPEs or external entities, to prevent XXE attacks when parsing
+     * content coming from the repositories we process.
+     */
+    protected static SAXReader createSecureSAXReader() throws IssueProvidingContentException {
+
+        SAXReader reader = SAXReader.createDefault();
+
+        try {
+            reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            reader.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (SAXException e) {
+            throw new IssueProvidingContentException("unable to configure a secure XML parser", e);
+        }
+
+        return reader;
+    }
+
     protected Document parseStringIntoDocument(String documentToProcess, String elementInError) throws IssueProvidingContentException {
 
-        SAXReader reader = new SAXReader();
+        SAXReader reader = createSecureSAXReader();
 
         try {
             return reader.read(new InputSource(new StringReader(documentToProcess)));

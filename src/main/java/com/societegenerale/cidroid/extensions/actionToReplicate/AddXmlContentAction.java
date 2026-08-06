@@ -84,7 +84,7 @@ public class AddXmlContentAction extends AbstractXmlProcessingAction implements 
 
         List<Document> parsedDocumentsFromProvidedGlobalDoc = new ArrayList<>();
 
-        SAXReader reader = new SAXReader();
+        SAXReader reader = createSecureSAXReader();
 
         try {
 
@@ -145,6 +145,8 @@ public class AddXmlContentAction extends AbstractXmlProcessingAction implements 
     private String findClosingElementOfNextXmlBlockEvents(String documentToProcess) throws IssueProvidingContentException {
 
         XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
         XMLEventReader reader = null;
 
         try {
